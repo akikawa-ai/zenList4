@@ -1,0 +1,2864 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>禅リスト — Todo & 習慣管理</title>
+
+<!-- PWA Meta -->
+<meta name="application-name" content="禅リスト">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="禅リスト">
+<meta name="theme-color" content="#f5f0e8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="description" content="和風デザインのTodo＆習慣管理アプリ">
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+
+<!-- Service Worker -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(() => console.log('SW registered'))
+      .catch(e => console.log('SW error:', e));
+  });
+}
+</script>
+
+<!-- PWA Icons (inline SVG as data URI) -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgZmlsbD0iI2Y1ZjBlOCIvPgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSI4IiBoZWlnaHQ9IjUxMiIgZmlsbD0iI2MwMzkyYiIvPgogIDx0ZXh0IHg9IjI2NiIgeT0iMzAwIiBmb250LWZhbWlseT0ic2VyaWYiIGZvbnQtc2l6ZT0iMjQwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMmMyNDE2IiBmb250LXdlaWdodD0iYm9sZCI+56aFPC90ZXh0PgogIDx0ZXh0IHg9IjI2NiIgeT0iNDIwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI3MiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI2MwMzkyYiIgbGV0dGVyLXNwYWNpbmc9IjgiPuODquOCueODiDwvdGV4dD4KPC9zdmc+">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgZmlsbD0iI2Y1ZjBlOCIvPgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSI4IiBoZWlnaHQ9IjUxMiIgZmlsbD0iI2MwMzkyYiIvPgogIDx0ZXh0IHg9IjI2NiIgeT0iMzAwIiBmb250LWZhbWlseT0ic2VyaWYiIGZvbnQtc2l6ZT0iMjQwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMmMyNDE2IiBmb250LXdlaWdodD0iYm9sZCI+56aFPC90ZXh0PgogIDx0ZXh0IHg9IjI2NiIgeT0iNDIwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI3MiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI2MwMzkyYiIgbGV0dGVyLXNwYWNpbmc9IjgiPuODquOCueODiDwvdGV4dD4KPC9zdmc+">
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=Noto+Sans+JP:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --washi: #f5f0e8;
+    --washi-dark: #e8e0d0;
+    --ink: #2c2416;
+    --ink-light: #5a4e3c;
+    --ink-faint: #a09880;
+    --vermillion: #c0392b;
+    --gold: #b8860b;
+    --moss: #4a6741;
+    --indigo: #2e4a7a;
+    --sakura: #d4849a;
+    --bamboo: #7a9b6a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--washi);
+    color: var(--ink);
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* 和紙テクスチャ */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(180,160,120,0.08) 28px, rgba(180,160,120,0.08) 29px),
+      repeating-linear-gradient(90deg, transparent, transparent 28px, rgba(180,160,120,0.04) 28px, rgba(180,160,120,0.04) 29px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* 左側の朱線 */
+  body::after {
+    content: '';
+    position: fixed;
+    left: 72px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(192, 57, 43, 0.2);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 32px;
+  }
+
+  /* ヘッダー */
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+    padding-bottom: 32px;
+    border-bottom: 2px solid var(--ink);
+    position: relative;
+  }
+
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 1px;
+    background: var(--vermillion);
+    opacity: 0.4;
+  }
+
+  .title-ja {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 2.4rem;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    color: var(--ink);
+  }
+
+  .title-sub {
+    font-size: 0.75rem;
+    letter-spacing: 0.4em;
+    color: var(--ink-faint);
+    margin-top: 8px;
+    text-transform: uppercase;
+  }
+
+  .date-display {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.85rem;
+    color: var(--vermillion);
+    margin-top: 12px;
+    letter-spacing: 0.2em;
+  }
+
+  /* タブナビ */
+  .tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--ink-faint);
+  }
+
+  .tab {
+    padding: 12px 28px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.9rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    color: var(--ink-faint);
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.25s ease;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+
+  .tab:hover { color: var(--ink); }
+
+  .tab.active {
+    color: var(--vermillion);
+    border-bottom-color: var(--vermillion);
+    font-weight: 600;
+  }
+
+  .panel { display: none; animation: fadeIn 0.3s ease; }
+  .panel.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ─── TODO パネル ─── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.2em;
+    color: var(--ink);
+  }
+
+  .section-title span {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: var(--vermillion);
+    border-radius: 50%;
+    margin-right: 10px;
+    vertical-align: middle;
+  }
+
+  /* タスク入力 */
+  .add-form {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid var(--ink-faint);
+    border-radius: 2px;
+    padding: 4px 4px 4px 16px;
+  }
+
+  .add-form input {
+    flex: 1;
+    background: none;
+    border: none;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    outline: none;
+    padding: 10px 0;
+  }
+
+  .add-form input::placeholder { color: var(--ink-faint); }
+
+  .add-form select {
+    background: none;
+    border: none;
+    border-left: 1px solid var(--washi-dark);
+    padding: 10px 12px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.8rem;
+    color: var(--ink-light);
+    outline: none;
+    cursor: pointer;
+  }
+
+  .btn-add {
+    background: var(--ink);
+    color: var(--washi);
+    border: none;
+    padding: 10px 20px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    border-radius: 1px;
+    transition: background 0.2s;
+  }
+
+  .btn-add:hover { background: var(--vermillion); }
+
+  /* 2段入力フォーム */
+  .add-form-vertical {
+    background: rgba(255,255,255,0.5);
+    border: 1px solid var(--ink-faint);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .add-form-row1 {
+    padding: 0 16px;
+    border-bottom: 1px solid var(--washi-dark);
+  }
+
+  .add-form-row1 input {
+    width: 100%;
+    background: none;
+    border: none;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    outline: none;
+    padding: 12px 0;
+  }
+
+  .add-form-row1 input::placeholder { color: var(--ink-faint); }
+
+  .add-form-row2 {
+    display: flex;
+    align-items: center;
+    padding: 0 4px 0 16px;
+  }
+
+  .add-form-row2 input[type="text"] {
+    background: none;
+    border: none;
+    border-right: 1px solid var(--washi-dark);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.8rem;
+    color: var(--ink-light);
+    outline: none;
+    padding: 9px 12px 9px 0;
+    width: 110px;
+    flex-shrink: 0;
+  }
+
+  .add-form-row2 input[type="text"]::placeholder { color: var(--ink-faint); }
+
+  .add-form-row2 select {
+    background: none;
+    border: none;
+    border-right: 1px solid var(--washi-dark);
+    padding: 9px 12px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.8rem;
+    color: var(--ink-light);
+    outline: none;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .add-form-row2 .btn-add {
+    margin-left: auto;
+  }
+
+  .btn-clear-done {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--moss);
+    color: var(--moss);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    padding: 2px 10px;
+    border-radius: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .btn-clear-done:hover { background: var(--moss); color: white; }
+
+  /* タスクリスト */
+  .task-group { margin-bottom: 32px; }
+
+  .group-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.35em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--washi-dark);
+  }
+
+  .task-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    margin-bottom: 4px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.15s;
+    position: relative;
+  }
+
+  .task-item:hover { background: rgba(255,255,255,0.6); }
+
+  .task-item.done { opacity: 0.5; }
+
+  .task-check {
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid var(--ink-faint);
+    border-radius: 1px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .task-item.done .task-check {
+    background: var(--moss);
+    border-color: var(--moss);
+  }
+
+  .task-item.done .task-check::after {
+    content: '✓';
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+  }
+
+  .task-text {
+    flex: 1;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .task-item.done .task-text { text-decoration: line-through; color: var(--ink-faint); }
+
+  .priority-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .priority-high .priority-dot { background: var(--vermillion); }
+  .priority-mid .priority-dot { background: var(--gold); }
+  .priority-low .priority-dot { background: var(--bamboo); }
+
+  .task-del {
+    opacity: 0;
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 2px 6px;
+    transition: opacity 0.15s, color 0.15s;
+  }
+
+  .task-item:hover .task-del { opacity: 1; }
+  .task-del:hover { color: var(--vermillion); }
+
+  /* ─── 習慣パネル ─── */
+  .habit-add-form {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid var(--ink-faint);
+    border-radius: 2px;
+    padding: 4px 4px 4px 16px;
+  }
+
+  .habit-add-form input {
+    flex: 1;
+    background: none;
+    border: none;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    outline: none;
+    padding: 10px 0;
+  }
+
+  .habit-add-form input::placeholder { color: var(--ink-faint); }
+
+  .habit-add-form select {
+    background: none;
+    border: none;
+    border-left: 1px solid var(--washi-dark);
+    padding: 10px 12px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.8rem;
+    color: var(--ink-light);
+    outline: none;
+    cursor: pointer;
+  }
+
+  .habit-item {
+    background: rgba(255,255,255,0.45);
+    border: 1px solid var(--washi-dark);
+    border-radius: 2px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    transition: box-shadow 0.2s;
+  }
+
+  .habit-item:hover { box-shadow: 0 2px 12px rgba(44,36,22,0.08); }
+
+  .habit-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .habit-name {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+  }
+
+  .habit-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .habit-freq {
+    font-size: 0.72rem;
+    letter-spacing: 0.25em;
+    color: var(--ink-faint);
+    background: var(--washi-dark);
+    padding: 3px 10px;
+    border-radius: 1px;
+  }
+
+  .streak-badge {
+    font-size: 0.75rem;
+    color: var(--vermillion);
+    font-family: 'Noto Serif JP', serif;
+    letter-spacing: 0.1em;
+  }
+
+  .streak-badge.active { color: var(--gold); font-weight: 600; }
+
+  /* 週間グリッド */
+  .week-grid {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .day-cell {
+    flex: 1;
+    text-align: center;
+  }
+
+  .day-label {
+    font-size: 0.65rem;
+    color: var(--ink-faint);
+    margin-bottom: 4px;
+    letter-spacing: 0.1em;
+  }
+
+  .day-dot {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 2px;
+    border: 1.5px solid var(--washi-dark);
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    max-width: 36px;
+    margin: 0 auto;
+    display: block;
+  }
+
+  .day-dot:hover { border-color: var(--ink-faint); background: var(--washi-dark); }
+  .day-dot.done { background: var(--moss); border-color: var(--moss); }
+  .day-dot.done-partial { background: var(--bamboo); border-color: var(--bamboo); opacity: 0.6; }
+
+  /* ─── 統計パネル ─── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+
+  .stat-card {
+    background: rgba(255,255,255,0.5);
+    border: 1px solid var(--washi-dark);
+    border-radius: 2px;
+    padding: 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+  }
+
+  .stat-card.red::before { background: var(--vermillion); }
+  .stat-card.gold::before { background: var(--gold); }
+  .stat-card.green::before { background: var(--moss); }
+
+  .stat-num {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 2.8rem;
+    font-weight: 300;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .stat-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.3em;
+    color: var(--ink-faint);
+  }
+
+  /* バーグラフ */
+  .chart-section { margin-bottom: 40px; }
+
+  .chart-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.9rem;
+    letter-spacing: 0.2em;
+    color: var(--ink);
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--washi-dark);
+  }
+
+  .bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 120px;
+    padding: 0 4px;
+  }
+
+  .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+  .bar {
+    width: 100%;
+    border-radius: 1px 1px 0 0;
+    transition: height 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    min-height: 3px;
+  }
+
+  .bar-label { font-size: 0.65rem; color: var(--ink-faint); letter-spacing: 0.1em; }
+
+  /* 草生やす的なヒートマップ */
+  .heatmap {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-top: 16px;
+  }
+
+  .heat-cell {
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background: var(--washi-dark);
+    transition: background 0.2s;
+  }
+
+  .heat-cell.l1 { background: rgba(74, 103, 65, 0.25); }
+  .heat-cell.l2 { background: rgba(74, 103, 65, 0.5); }
+  .heat-cell.l3 { background: rgba(74, 103, 65, 0.75); }
+  .heat-cell.l4 { background: rgba(74, 103, 65, 1); }
+
+  /* ─── タスク帳 インライン選択 ─── */
+  .tb-select-bar {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--ink);
+    color: var(--washi);
+    padding: 12px 20px;
+    border-radius: 2px;
+    margin-bottom: 20px;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 16px rgba(44,36,22,0.18);
+    animation: fadeIn 0.2s ease;
+  }
+
+  .tb-select-bar.visible { display: flex; }
+
+  .tb-select-count {
+    flex: 1;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+  }
+
+  .tb-select-count strong { color: var(--gold); }
+
+  .btn-tb-add-today {
+    background: var(--vermillion);
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    border-radius: 1px;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-tb-add-today:hover { background: #a02a20; }
+
+  .btn-tb-clear {
+    background: none;
+    border: 1px solid rgba(245,240,232,0.3);
+    color: rgba(245,240,232,0.7);
+    padding: 7px 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    border-radius: 1px;
+    transition: all 0.2s;
+  }
+
+  .btn-tb-clear:hover { border-color: rgba(245,240,232,0.7); color: var(--washi); }
+
+  .tb-item-check {
+    width: 17px;
+    height: 17px;
+    border: 1.5px solid var(--ink-faint);
+    border-radius: 1px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .tb-item-check:hover { border-color: var(--moss); }
+
+  .taskbook-item.tb-selected .tb-item-check {
+    background: var(--moss);
+    border-color: var(--moss);
+  }
+
+  .taskbook-item.tb-selected .tb-item-check::after {
+    content: '✓';
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+  }
+
+  .taskbook-item.tb-selected {
+    background: rgba(74,103,65,0.08);
+  }
+
+  /* 未使用カテゴリー整理ボタン */
+  .btn-cleanup-cats {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    background: none;
+    border: none;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    cursor: pointer;
+    padding: 4px 2px;
+    transition: color 0.2s;
+  }
+
+  .btn-cleanup-cats:hover { color: var(--vermillion); }
+
+  /* ─── タスク帳 ─── */
+  .taskbook-toolbar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .taskbook-add-form {
+    display: flex;
+    flex: 1;
+    min-width: 260px;
+    gap: 0;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid var(--ink-faint);
+    border-radius: 2px;
+    padding: 4px 4px 4px 16px;
+  }
+
+  .taskbook-add-form input {
+    flex: 1;
+    background: none;
+    border: none;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    outline: none;
+    padding: 10px 0;
+  }
+
+  .taskbook-add-form input::placeholder { color: var(--ink-faint); }
+
+  .taskbook-add-form select {
+    background: none;
+    border: none;
+    border-left: 1px solid var(--washi-dark);
+    padding: 10px 12px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.8rem;
+    color: var(--ink-light);
+    outline: none;
+    cursor: pointer;
+  }
+
+  .category-section { margin-bottom: 32px; }
+
+  .category-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--washi-dark);
+  }
+
+  .category-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .category-name {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.95rem;
+    letter-spacing: 0.2em;
+    flex: 1;
+  }
+
+  .category-count {
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.1em;
+  }
+
+  .taskbook-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    margin-bottom: 3px;
+    border-radius: 2px;
+    transition: background 0.15s;
+  }
+
+  .taskbook-item:hover { background: rgba(255,255,255,0.6); }
+
+  .taskbook-item-text {
+    flex: 1;
+    font-size: 0.9rem;
+  }
+
+  .taskbook-item-priority {
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    color: var(--ink-faint);
+    background: var(--washi-dark);
+    padding: 2px 8px;
+    border-radius: 1px;
+  }
+
+  .taskbook-del {
+    opacity: 0;
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 2px 6px;
+    transition: opacity 0.15s, color 0.15s;
+  }
+
+  .taskbook-item:hover .taskbook-del { opacity: 1; }
+  .taskbook-del:hover { color: var(--vermillion); }
+
+  /* ─── モーダル ─── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(44,36,22,0.45);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--washi);
+    border: 1px solid var(--ink-faint);
+    border-radius: 3px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 40px rgba(44,36,22,0.2);
+    animation: modalIn 0.25s ease;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .modal-header {
+    padding: 24px 28px 16px;
+    border-bottom: 1px solid var(--washi-dark);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.05rem;
+    letter-spacing: 0.2em;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: color 0.2s;
+  }
+
+  .modal-close:hover { color: var(--vermillion); }
+
+  .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 28px;
+  }
+
+  .modal-category {
+    margin-bottom: 20px;
+  }
+
+  .modal-cat-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+    letter-spacing: 0.3em;
+    color: var(--ink-faint);
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--washi-dark);
+  }
+
+  .modal-task-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 10px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+
+  .modal-task-row:hover { background: rgba(255,255,255,0.7); }
+
+  .modal-task-row.selected { background: rgba(74,103,65,0.1); }
+
+  .modal-check {
+    width: 17px; height: 17px;
+    border: 1.5px solid var(--ink-faint);
+    border-radius: 1px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .modal-task-row.selected .modal-check {
+    background: var(--moss);
+    border-color: var(--moss);
+  }
+
+  .modal-task-row.selected .modal-check::after {
+    content: '✓';
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+  }
+
+  .modal-task-name { flex: 1; font-size: 0.88rem; }
+
+  .modal-task-pri {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+  }
+
+  .modal-footer {
+    padding: 16px 28px;
+    border-top: 1px solid var(--washi-dark);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .modal-selected-count {
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.1em;
+  }
+
+  .modal-selected-count strong { color: var(--moss); font-weight: 600; }
+
+  .btn-modal-add {
+    background: var(--moss);
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    border-radius: 1px;
+    transition: background 0.2s, opacity 0.2s;
+  }
+
+  .btn-modal-add:hover { background: #3a5632; }
+  .btn-modal-add:disabled { opacity: 0.4; cursor: default; }
+
+  .btn-from-taskbook {
+    background: none;
+    border: none;
+    padding: 0 0 0 2px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.12em;
+    color: var(--ink-faint);
+    cursor: pointer;
+    border-radius: 0;
+    transition: color 0.2s;
+    margin-bottom: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-from-taskbook:hover { color: var(--moss); background: none; border-color: transparent; }
+
+  /* ─── データ モーダル ─── */
+  .data-section { margin-bottom: 4px; }
+
+  .data-section-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1rem;
+    letter-spacing: 0.18em;
+    color: var(--ink);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .data-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; height: 24px;
+    background: var(--washi-dark);
+    border-radius: 50%;
+    font-size: 0.85rem;
+    color: var(--ink-light);
+    flex-shrink: 0;
+  }
+
+  .data-desc {
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+    line-height: 1.6;
+    margin-bottom: 14px;
+    letter-spacing: 0.05em;
+  }
+
+  .data-scope-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    margin-bottom: 16px;
+  }
+
+  .data-check-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.84rem;
+    color: var(--ink-light);
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .data-check-label input[type=checkbox] { accent-color: var(--moss); }
+
+  .data-merge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 24px;
+    margin-bottom: 16px;
+  }
+
+  .data-radio-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.84rem;
+    color: var(--ink-light);
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .data-radio-label input[type=radio] { accent-color: var(--indigo); }
+
+  .btn-data-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 24px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+    border: none;
+  }
+
+  .btn-export {
+    background: var(--ink);
+    color: var(--washi);
+  }
+
+  .btn-export:hover { background: var(--indigo); }
+
+  .btn-import-label {
+    background: rgba(255,255,255,0.6);
+    border: 1.5px solid var(--ink-faint) !important;
+    color: var(--ink-light);
+  }
+
+  .btn-import-label:hover { border-color: var(--moss) !important; color: var(--moss); background: rgba(74,103,65,0.06); }
+
+  .data-divider {
+    height: 1px;
+    background: var(--washi-dark);
+    margin: 24px 0;
+  }
+
+  .import-status {
+    margin-top: 12px;
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    min-height: 20px;
+  }
+
+  .import-status.ok { color: var(--moss); }
+  .import-status.err { color: var(--vermillion); }
+
+  /* ─── 優先度変更ピル ─── */
+  .priority-pill {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    padding: 3px 9px 3px 7px;
+    border-radius: 2px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: border-color 0.15s, background 0.15s;
+    user-select: none;
+    flex-shrink: 0;
+    background: var(--washi-dark);
+    color: var(--ink-light);
+  }
+
+  .priority-pill:hover { border-color: var(--ink-faint); }
+
+  .priority-pill::after {
+    content: '▾';
+    font-size: 0.6rem;
+    opacity: 0.5;
+  }
+
+  .priority-pill.high { background: rgba(192,57,43,0.1); color: var(--vermillion); border-color: rgba(192,57,43,0.2); }
+  .priority-pill.mid  { background: rgba(184,134,11,0.1); color: var(--gold);       border-color: rgba(184,134,11,0.2); }
+  .priority-pill.low  { background: rgba(74,103,65,0.1);  color: var(--moss);       border-color: rgba(74,103,65,0.2); }
+
+  .priority-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: var(--washi);
+    border: 1px solid var(--ink-faint);
+    border-radius: 2px;
+    box-shadow: 0 4px 16px rgba(44,36,22,0.12);
+    z-index: 50;
+    min-width: 100px;
+    overflow: hidden;
+    animation: fadeIn 0.12s ease;
+  }
+
+  .priority-dropdown button {
+    display: block;
+    width: 100%;
+    padding: 9px 14px;
+    text-align: left;
+    background: none;
+    border: none;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    color: var(--ink-light);
+    transition: background 0.1s;
+  }
+
+  .priority-dropdown button:hover { background: var(--washi-dark); }
+  .priority-dropdown button.active { font-weight: 600; color: var(--ink); }
+  .priority-dropdown .opt-high { border-left: 3px solid var(--vermillion); }
+  .priority-dropdown .opt-mid  { border-left: 3px solid var(--gold); }
+  .priority-dropdown .opt-low  { border-left: 3px solid var(--moss); }
+
+  /* ─── カテゴリー変更ピル ─── */
+  .category-pill {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    padding: 3px 9px 3px 8px;
+    border-radius: 2px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: border-color 0.15s, opacity 0.15s;
+    user-select: none;
+    flex-shrink: 0;
+    color: white;
+  }
+
+  .category-pill::before {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.7);
+    flex-shrink: 0;
+  }
+
+  .category-pill::after {
+    content: '▾';
+    font-size: 0.6rem;
+    opacity: 0.7;
+  }
+
+  .category-pill:hover { opacity: 0.85; }
+
+  .category-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: var(--washi);
+    border: 1px solid var(--ink-faint);
+    border-radius: 2px;
+    box-shadow: 0 4px 16px rgba(44,36,22,0.14);
+    z-index: 50;
+    min-width: 110px;
+    overflow: hidden;
+    animation: fadeIn 0.12s ease;
+  }
+
+  .category-dropdown button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 9px 14px;
+    text-align: left;
+    background: none;
+    border: none;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    color: var(--ink-light);
+    transition: background 0.1s;
+  }
+
+  .category-dropdown button:hover { background: var(--washi-dark); }
+  .category-dropdown button.active { font-weight: 600; color: var(--ink); }
+
+  .cat-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ─── ドラッグ並べ替え ─── */
+  .drag-handle {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 4px 6px;
+    cursor: grab;
+    opacity: 0;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+  }
+
+  .drag-handle span {
+    display: block;
+    width: 14px;
+    height: 1.5px;
+    background: var(--ink-faint);
+    border-radius: 1px;
+  }
+
+  .task-item:hover .drag-handle,
+  .habit-item:hover .drag-handle,
+  .taskbook-item:hover .drag-handle { opacity: 1; }
+
+  .drag-handle:active { cursor: grabbing; }
+
+  .dragging {
+    opacity: 0.45;
+    background: rgba(255,255,255,0.8) !important;
+    box-shadow: 0 4px 20px rgba(44,36,22,0.15);
+    transform: scale(1.01);
+  }
+
+  .drag-over-top {
+    border-top: 2px solid var(--vermillion) !important;
+  }
+
+  .drag-over-bottom {
+    border-bottom: 2px solid var(--vermillion) !important;
+  }
+
+  /* 習慣 → 今日の課題へボタン */
+  .btn-habit-add-today {
+    background: none;
+    border: 1px solid var(--moss);
+    color: var(--moss);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    padding: 3px 10px;
+    border-radius: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .btn-habit-add-today:hover:not(:disabled) { background: var(--moss); color: white; }
+
+  .btn-habit-add-today.added {
+    border-color: var(--ink-faint);
+    color: var(--ink-faint);
+    cursor: default;
+  }
+
+  .btn-habit-add-today.added[disabled] { opacity: 0.8; }
+
+  .btn-habit-bulk-add {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--vermillion);
+    color: var(--vermillion);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    padding: 3px 12px;
+    border-radius: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .btn-habit-bulk-add:hover:not(:disabled) { background: var(--vermillion); color: white; }
+
+  .btn-habit-bulk-add.added {
+    border-color: var(--ink-faint);
+    color: var(--ink-faint);
+    cursor: default;
+  }
+
+  /* 習慣 重複警告 */
+  .dup-asterisk {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1rem;
+    color: var(--vermillion);
+    margin-left: 5px;
+    vertical-align: middle;
+    animation: pulse-dup 2s ease-in-out infinite;
+    cursor: help;
+  }
+
+  @keyframes pulse-dup {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .habit-duplicate {
+    border-left: 2px solid var(--vermillion);
+    padding-left: 10px;
+    margin-left: -12px;
+  }
+
+  /* 習慣 頻度グループ */
+  .habit-freq-group {
+    margin-bottom: 36px;
+  }
+
+  .habit-freq-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1.5px solid var(--ink);
+    position: relative;
+  }
+
+  .habit-freq-header::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 40%;
+    height: 1px;
+    background: var(--vermillion);
+    opacity: 0.3;
+  }
+
+  .habit-freq-kanji {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.6rem;
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: 0.05em;
+  }
+
+  .habit-freq-label {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.25em;
+    color: var(--ink-light);
+  }
+
+  .habit-freq-count {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--ink-faint);
+    margin-left: auto;
+  }
+
+  /* 月カレンダーグリッド */
+  .month-grid-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+    margin-bottom: 3px;
+  }
+
+  .month-day-label {
+    text-align: center;
+    font-size: 0.62rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.05em;
+    padding: 2px 0;
+  }
+
+  .month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+  }
+
+  .month-cell {
+    aspect-ratio: 1;
+    border-radius: 2px;
+    border: 1.5px solid var(--washi-dark);
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    color: var(--ink-faint);
+    font-family: 'Noto Serif JP', serif;
+  }
+
+  .month-cell:hover { border-color: var(--ink-faint); background: var(--washi-dark); }
+  .month-cell.done { background: var(--indigo); border-color: var(--indigo); color: white; }
+  .month-cell.today-cell { border-color: var(--gold); color: var(--gold); font-weight: 600; }
+  .month-cell.today-cell.done { background: var(--indigo); border-color: var(--indigo); color: white; }
+  .month-cell.empty { background: none; border-color: transparent; cursor: default; }
+
+
+    width: 40px;
+    height: 1px;
+    background: var(--vermillion);
+    opacity: 0.4;
+    margin: 0 auto 40px;
+  }
+
+  /* 達成率リング */
+  .ring-container {
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+    margin-bottom: 40px;
+  }
+
+  .ring-wrap { text-align: center; }
+
+  .ring-wrap svg { display: block; margin: 0 auto 8px; }
+
+  .ring-name {
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    color: var(--ink-light);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 0;
+    color: var(--ink-faint);
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+  }
+
+  .empty-state .kanji { font-family: 'Noto Serif JP', serif; font-size: 2rem; display: block; margin-bottom: 8px; opacity: 0.3; }
+</style>
+</head>
+<body>
+
+<!-- Android/Chrome インストールバナー -->
+<div id="installBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;background:var(--ink);color:var(--washi);padding:14px 20px;align-items:center;gap:12px;font-family:'Noto Sans JP',sans-serif;font-size:0.82rem;letter-spacing:0.08em;box-shadow:0 -4px 20px rgba(44,36,22,0.2);">
+  <span style="flex:1">📲 ホーム画面に追加して快適に使えます</span>
+  <button onclick="installApp()" style="background:var(--vermillion);color:white;border:none;padding:8px 16px;font-family:'Noto Sans JP',sans-serif;font-size:0.8rem;cursor:pointer;border-radius:1px;letter-spacing:0.1em;">追加</button>
+  <button onclick="dismissBanner()" style="background:none;border:1px solid rgba(245,240,232,0.3);color:rgba(245,240,232,0.7);padding:7px 12px;font-family:'Noto Sans JP',sans-serif;font-size:0.8rem;cursor:pointer;border-radius:1px;">後で</button>
+</div>
+
+<!-- iOS Safari 案内バナー -->
+<div id="iosBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;background:var(--ink);color:var(--washi);padding:14px 20px;align-items:center;gap:12px;font-family:'Noto Sans JP',sans-serif;font-size:0.8rem;letter-spacing:0.08em;box-shadow:0 -4px 20px rgba(44,36,22,0.2);">
+  <span style="flex:1">📲 Safari の <strong>共有ボタン</strong> →「ホーム画面に追加」でインストールできます</span>
+  <button onclick="document.getElementById('iosBanner').style.display='none'" style="background:none;border:1px solid rgba(245,240,232,0.3);color:rgba(245,240,232,0.7);padding:7px 12px;font-family:'Noto Sans JP',sans-serif;font-size:0.8rem;cursor:pointer;border-radius:1px;">閉じる</button>
+</div>
+
+<div class="app">
+  <header>
+    <div class="title-ja">禅リスト</div>
+    <div class="title-sub">Todo &amp; Habit Tracker</div>
+    <div style="font-size:0.68rem;letter-spacing:0.3em;color:var(--ink-faint);margin-top:4px;">version 4.1</div>
+    <div class="date-display" id="dateDisplay"></div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showPanel('todo', this)">今日の課題</button>
+    <button class="tab" onclick="showPanel('taskbook', this)">タスク帳</button>
+    <button class="tab" onclick="showPanel('habit', this)">習慣の道</button>
+    <button class="tab" onclick="showPanel('stats', this)">修養の記録</button>
+    <div style="flex:1"></div>
+    <button class="tab" onclick="openDataModal()" style="letter-spacing:0.1em;font-size:0.8rem;">⇅ データ</button>
+  </div>
+
+  <!-- TODO パネル -->
+  <div id="panel-todo" class="panel active">
+    <button class="btn-from-taskbook" onclick="openTaskbookModal()">
+      <span style="font-size:1rem;">📋</span> 個別に追加
+    </button>
+    <div class="add-form-vertical" style="margin-bottom:32px;">
+      <div class="add-form-row1">
+        <input type="text" id="taskInput" placeholder="新しい課題を登録する…" onkeydown="if(event.key==='Enter') addTask()">
+      </div>
+      <div class="add-form-row2">
+        <input type="text" id="taskCategory" list="categoryList" placeholder="カテゴリー" autocomplete="off">
+        <select id="taskPriority">
+          <option value="high">急ぎ</option>
+          <option value="mid" selected>ふつう</option>
+          <option value="low">のちほど</option>
+        </select>
+        <button class="btn-add" onclick="addTask()">登録</button>
+      </div>
+    </div>
+
+    <div id="todoList"></div>
+  </div>
+
+  <!-- タスク帳パネル -->
+  <div id="panel-taskbook" class="panel">
+    <!-- 選択時に浮き上がるバー -->
+    <div class="tb-select-bar" id="tbSelectBar">
+      <div class="tb-select-count" id="tbSelectCount"><strong>0</strong> 件選択中</div>
+      <button class="btn-tb-clear" onclick="tbClearSelection()">選択解除</button>
+      <button class="btn-tb-add-today" onclick="tbAddSelectedToToday()">今日の課題に追加 →</button>
+    </div>
+    <div class="taskbook-toolbar">
+      <div class="add-form-vertical">
+        <div class="add-form-row1">
+          <input type="text" id="tbInput" placeholder="タスクを登録する…" onkeydown="if(event.key==='Enter') addTaskbookItem()">
+        </div>
+        <div class="add-form-row2">
+          <input type="text" id="tbCategory" list="categoryList" placeholder="カテゴリー" autocomplete="off">
+          <datalist id="categoryList"></datalist>
+          <select id="tbPriority">
+            <option value="high">急ぎ</option>
+            <option value="mid" selected>ふつう</option>
+            <option value="low">のちほど</option>
+          </select>
+          <button class="btn-add" onclick="addTaskbookItem()">登録</button>
+        </div>
+      </div>
+      <button class="btn-cleanup-cats" onclick="cleanupUnusedCategories()" title="タスクに使われていないカテゴリー色を削除します">
+        🗑 未使用カテゴリーを整理
+      </button>
+    </div>
+    <div id="taskbookList"></div>
+  </div>
+
+  <!-- 習慣パネル -->
+  <div id="panel-habit" class="panel">
+    <div class="habit-add-form">
+      <input type="text" id="habitInput" placeholder="新しい習慣を登録する…" onkeydown="if(event.key==='Enter') addHabit()">
+      <select id="habitFreq">
+        <option value="daily">毎日</option>
+        <option value="weekly">毎週</option>
+        <option value="monthly">毎月</option>
+      </select>
+      <button class="btn-add" onclick="addHabit()">登録</button>
+    </div>
+    <div id="habitList"></div>
+  </div>
+
+  <!-- 統計パネル -->
+  <div id="panel-stats" class="panel">
+    <div class="stats-grid">
+      <div class="stat-card red">
+        <div class="stat-num" id="statTasks">0</div>
+        <div class="stat-label">完了した課題</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-num" id="statStreak">0</div>
+        <div class="stat-label">最長連続記録</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-num" id="statHabits">0</div>
+        <div class="stat-label">習慣の数</div>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-title">今週の達成率</div>
+      <div class="ring-container" id="ringContainer"></div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-title">過去28日の記録</div>
+      <div class="heatmap" id="heatmap"></div>
+    </div>
+  </div>
+</div>
+
+<!-- データ エクスポート/インポート モーダル -->
+<div class="modal-overlay" id="dataModal">
+  <div class="modal" style="max-width:620px;">
+    <div class="modal-header">
+      <div class="modal-title">データの保存と読み込み</div>
+      <button class="modal-close" onclick="closeDataModal()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:28px;">
+
+      <!-- エクスポート -->
+      <div class="data-section">
+        <div class="data-section-title">
+          <span class="data-icon">↓</span> エクスポート
+        </div>
+        <p class="data-desc">現在のデータをJSONファイルとしてダウンロードします。バックアップや別の端末への移行に使えます。</p>
+        <div class="data-scope-row">
+          <label class="data-check-label"><input type="checkbox" id="exp-tasks" checked> 今日の課題・タスク履歴</label>
+          <label class="data-check-label"><input type="checkbox" id="exp-taskbook" checked> タスク帳</label>
+          <label class="data-check-label"><input type="checkbox" id="exp-habits" checked> 習慣・達成記録</label>
+        </div>
+        <button class="btn-data-action btn-export" onclick="doExport()">
+          ↓ JSONでダウンロード
+        </button>
+      </div>
+
+      <div class="data-divider"></div>
+
+      <!-- インポート -->
+      <div class="data-section">
+        <div class="data-section-title">
+          <span class="data-icon">↑</span> インポート
+        </div>
+        <p class="data-desc">以前エクスポートしたJSONファイルを読み込みます。</p>
+        <div class="data-merge-row">
+          <label class="data-radio-label">
+            <input type="radio" name="importMode" value="merge" checked> 既存データに追加（マージ）
+          </label>
+          <label class="data-radio-label">
+            <input type="radio" name="importMode" value="replace"> 既存データを上書き
+          </label>
+        </div>
+        <label class="btn-data-action btn-import-label">
+          ↑ JSONファイルを選択
+          <input type="file" id="importFile" accept=".json" style="display:none" onchange="doImport(this)">
+        </label>
+        <div id="importStatus" class="import-status"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="taskbookModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">タスク帳から今日の課題へ追加</div>
+      <button class="modal-close" onclick="closeTaskbookModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <div class="modal-selected-count" id="modalCount"><strong>0</strong> 件選択中</div>
+      <button class="btn-modal-add" id="modalAddBtn" onclick="addSelectedToToday()" disabled>今日の課題に追加</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── データ管理 ───
+let state = JSON.parse(localStorage.getItem('zenlist') || 'null') || {
+  tasks: [],
+  habits: [],
+  completions: {},
+  taskbook: []
+};
+
+if (!state.taskbook) state.taskbook = [];
+if (!state.archivedTasks) state.archivedTasks = [];
+
+const save = () => localStorage.setItem('zenlist', JSON.stringify(state));
+const localDate = (d = new Date()) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+const today = () => localDate();
+const todayStr = today();
+
+// 前日以前に完了したタスクを自動アーカイブ（当日完了分は残す）
+(function archiveOldDone() {
+  const toArchive = state.tasks.filter(t => t.done && t.completedDate && t.completedDate < todayStr);
+  if (toArchive.length) {
+    state.archivedTasks = [...state.archivedTasks, ...toArchive];
+    state.tasks = state.tasks.filter(t => !(t.done && t.completedDate && t.completedDate < todayStr));
+    save();
+  }
+})();
+
+// 日付表示
+const days = ['日','月','火','水','木','金','土'];
+const now = new Date();
+document.getElementById('dateDisplay').textContent =
+  `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
+
+// ─── タブ ───
+function showPanel(name, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  el.classList.add('active');
+  if (name === 'stats') renderStats();
+  if (name === 'taskbook') renderTaskbook();
+}
+
+// ─── タスク帳 インライン選択 ───
+let tbSelected = new Set();
+
+function tbToggleItem(id) {
+  if (tbSelected.has(id)) tbSelected.delete(id);
+  else tbSelected.add(id);
+  tbUpdateBar();
+  // 該当アイテムのみ見た目を更新（再描画なし）
+  const el = document.querySelector(`.taskbook-item[data-id="${id}"]`);
+  if (el) {
+    el.classList.toggle('tb-selected', tbSelected.has(id));
+    const check = el.querySelector('.tb-item-check');
+    if (check) check.style.cssText = '';
+  }
+}
+
+function tbUpdateBar() {
+  const bar = document.getElementById('tbSelectBar');
+  const count = document.getElementById('tbSelectCount');
+  if (!bar) return;
+  const n = tbSelected.size;
+  bar.classList.toggle('visible', n > 0);
+  count.innerHTML = `<strong>${n}</strong> 件選択中`;
+}
+
+function tbClearSelection() {
+  tbSelected.clear();
+  tbUpdateBar();
+  document.querySelectorAll('.taskbook-item.tb-selected').forEach(el => el.classList.remove('tb-selected'));
+}
+
+function tbAddSelectedToToday() {
+  const toAdd = state.taskbook.filter(t => tbSelected.has(t.id));
+  if (!toAdd.length) return;
+  toAdd.forEach(t => {
+    state.tasks.push({
+      id: Date.now() + Math.random(),
+      text: t.text,
+      priority: t.priority,
+      category: t.category || '',
+      done: false,
+      date: todayStr
+    });
+  });
+  save();
+  tbClearSelection();
+  renderTasks();
+  // 今日の課題タブへ切り替え
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(tb => tb.classList.remove('active'));
+  document.getElementById('panel-todo').classList.add('active');
+  document.querySelector('.tab').classList.add('active');
+}
+
+// ─── タスク帳 ───
+// デフォルトカラーパレット（新カテゴリーに順番に割り当て）
+const DEFAULT_COLORS = [
+  '#2e4a7a','#7a9b6a','#c0392b','#b8860b',
+  '#5a7a2e','#4a7a6a','#8a4a7a','#d4849a',
+  '#a09880','#2e7a6a','#7a4a2e','#4a2e7a',
+  '#6a7a2e','#7a2e4a','#2e6a7a','#7a6a2e'
+];
+
+// stateからCATEGORY_COLORSを復元、なければデフォルト
+if (!state.categoryColors) {
+  state.categoryColors = {
+    '仕事': '#2e4a7a', '家事': '#7a9b6a', '健康': '#c0392b',
+    '学習': '#b8860b', '農業': '#5a7a2e', '資産': '#4a7a6a',
+    '趣味': '#8a4a7a', '家族': '#d4849a', 'その他': '#a09880',
+    '毎日': '#c0392b', '毎週': '#2e4a7a', '毎月': '#4a6741'
+  };
+}
+// 既存データに習慣カテゴリーが未登録の場合も補完
+if (!state.categoryColors['毎日']) state.categoryColors['毎日'] = '#c0392b';
+if (!state.categoryColors['毎週']) state.categoryColors['毎週'] = '#2e4a7a';
+if (!state.categoryColors['毎月']) state.categoryColors['毎月'] = '#4a6741';
+
+function getCategoryColor(cat) {
+  if (!state.categoryColors[cat]) {
+    // 新カテゴリーに未使用色を割り当て
+    const used = new Set(Object.values(state.categoryColors));
+    const color = DEFAULT_COLORS.find(c => !used.has(c)) || DEFAULT_COLORS[Object.keys(state.categoryColors).length % DEFAULT_COLORS.length];
+    state.categoryColors[cat] = color;
+    save();
+  }
+  return state.categoryColors[cat];
+}
+
+function updateCategoryDatalist() {
+  const dl = document.getElementById('categoryList');
+  if (!dl) return;
+  // タスク帳・今日の課題両方からカテゴリーを収集
+  const tbCats = state.taskbook.map(t => t.category).filter(Boolean);
+  const todoCats = state.tasks.map(t => t.category).filter(Boolean);
+  // デフォルト＋習慣頻度カテゴリーを並列に含める
+  const defaults = ['仕事','家事','健康','学習','農業','資産','趣味','家族','その他','毎日','毎週','毎月'];
+  const all = [...new Set([...defaults, ...tbCats, ...todoCats])];
+  dl.innerHTML = all.map(c => `<option value="${escHtml(c)}">`).join('');
+}
+
+const PRIORITY_LABELS = { high: '急ぎ', mid: 'ふつう', low: 'のちほど' };
+
+function addTaskbookItem() {
+  const input = document.getElementById('tbInput');
+  const catInput = document.getElementById('tbCategory');
+  const text = input.value.trim();
+  const cat = catInput.value.trim() || 'その他';
+  if (!text) return;
+  getCategoryColor(cat); // 新カテゴリーなら色を生成・保存
+  state.taskbook.push({
+    id: Date.now(),
+    text,
+    category: cat,
+    priority: document.getElementById('tbPriority').value
+  });
+  input.value = '';
+  catInput.value = '';
+  save();
+  renderTaskbook();
+  updateCategoryDatalist();
+}
+
+function cleanupUnusedCategories() {
+  const usedCats = new Set(state.taskbook.map(t => t.category));
+  const before = Object.keys(state.categoryColors).length;
+  // デフォルトカテゴリーは保持、使われていないカスタムカテゴリーのみ削除
+  const defaults = new Set(['仕事','家事','健康','学習','農業','資産','趣味','家族','その他']);
+  Object.keys(state.categoryColors).forEach(cat => {
+    if (!usedCats.has(cat) && !defaults.has(cat)) {
+      delete state.categoryColors[cat];
+    }
+  });
+  const removed = before - Object.keys(state.categoryColors).length;
+  save();
+  updateCategoryDatalist();
+  if (removed > 0) {
+    alert(`${removed}件の未使用カテゴリーを削除しました。`);
+  } else {
+    alert('未使用のカスタムカテゴリーはありません。');
+  }
+}
+
+function deleteTaskbookItem(id) {
+  state.taskbook = state.taskbook.filter(t => t.id !== id);
+  save();
+  renderTaskbook();
+}
+
+function renderTaskbook() {
+  const container = document.getElementById('taskbookList');
+  if (!state.taskbook.length) {
+    container.innerHTML = `<div class="empty-state"><span class="kanji">空</span>タスクを登録してください</div>`;
+    return;
+  }
+
+  // カテゴリ別にグループ化（登録順を維持）
+  const groups = {};
+  const catOrder = [];
+  state.taskbook.forEach(t => {
+    if (!groups[t.category]) { groups[t.category] = []; catOrder.push(t.category); }
+    groups[t.category].push(t);
+  });
+
+  container.innerHTML = catOrder.filter((c,i)=>catOrder.indexOf(c)===i).map(cat => {
+    const color = getCategoryColor(cat);
+    const items = groups[cat];
+    const itemsHtml = `<div class="sortable-list" data-type="taskbook" data-cat="${escHtml(cat)}">${items.map(t => `
+      <div class="taskbook-item ${tbSelected.has(t.id)?'tb-selected':''}" data-id="${t.id}">
+        <div class="tb-item-check" onclick="tbToggleItem(${t.id})"></div>
+        <div class="drag-handle"><span></span><span></span><span></span></div>
+        <div class="taskbook-item-text">${escHtml(t.text)}</div>
+        <div class="category-pill" style="background:${getCategoryColor(t.category)}"
+          onclick="event.stopPropagation();toggleCategoryDropdown(event,${t.id})">${escHtml(t.category)}</div>
+        <div class="priority-pill ${t.priority}" onclick="event.stopPropagation();togglePriorityDropdown(event,'taskbook',${t.id})">${PRIORITY_LABELS[t.priority]}</div>
+        <button class="taskbook-del" onclick="deleteTaskbookItem(${t.id})">✕</button>
+      </div>`).join('')}</div>`;
+
+    return `
+      <div class="category-section">
+        <div class="category-header">
+          <div class="category-dot" style="background:${color}"></div>
+          <div class="category-name">${escHtml(cat)}</div>
+          <div class="category-count">${items.length}件</div>
+        </div>
+        ${itemsHtml}
+      </div>`;
+  }).join('');
+
+  container.querySelectorAll('.sortable-list').forEach(el => initDrag(el, 'taskbook'));
+  updateCategoryDatalist();
+  tbUpdateBar();
+}
+
+// ─── モーダル ───
+let modalSelected = new Set();
+
+function openTaskbookModal() {
+  if (!state.taskbook.length) {
+    alert('タスク帳にタスクがありません。先に「タスク帳」タブで登録してください。');
+    return;
+  }
+  modalSelected = new Set();
+  renderModal();
+  document.getElementById('taskbookModal').classList.add('open');
+}
+
+function closeTaskbookModal() {
+  document.getElementById('taskbookModal').classList.remove('open');
+}
+
+function toggleModalTask(id) {
+  if (modalSelected.has(id)) modalSelected.delete(id);
+  else modalSelected.add(id);
+  renderModal();
+}
+
+function renderModal() {
+  const body = document.getElementById('modalBody');
+  const count = document.getElementById('modalCount');
+  const btn = document.getElementById('modalAddBtn');
+
+  // カテゴリ別グループ化
+  const groups = {};
+  state.taskbook.forEach(t => {
+    if (!groups[t.category]) groups[t.category] = [];
+    groups[t.category].push(t);
+  });
+
+  body.innerHTML = Object.entries(groups).map(([cat, items]) => {
+    const color = getCategoryColor(cat);
+    const rowsHtml = items.map(t => {
+      const sel = modalSelected.has(t.id);
+      return `<div class="modal-task-row ${sel?'selected':''}" onclick="toggleModalTask(${t.id})">
+        <div class="modal-check"></div>
+        <div class="modal-task-name">${escHtml(t.text)}</div>
+        <div class="modal-task-pri">${PRIORITY_LABELS[t.priority]}</div>
+      </div>`;
+    }).join('');
+
+    return `<div class="modal-category">
+      <div class="modal-cat-label">
+        <div class="category-dot" style="background:${color};width:6px;height:6px;border-radius:50%;flex-shrink:0;"></div>
+        ${escHtml(cat)}
+      </div>
+      ${rowsHtml}
+    </div>`;
+  }).join('');
+
+  const n = modalSelected.size;
+  count.innerHTML = `<strong>${n}</strong> 件選択中`;
+  btn.disabled = n === 0;
+}
+
+function addSelectedToToday() {
+  const toAdd = state.taskbook.filter(t => modalSelected.has(t.id));
+  toAdd.forEach(t => {
+    state.tasks.push({
+      id: Date.now() + Math.random(),
+      text: t.text,
+      priority: t.priority,
+      category: t.category || '',
+      done: false,
+      date: todayStr
+    });
+  });
+  save();
+  closeTaskbookModal();
+  renderTasks();
+  // 今日の課題タブへ切り替え
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(tb => tb.classList.remove('active'));
+  document.getElementById('panel-todo').classList.add('active');
+  document.querySelector('.tab').classList.add('active');
+}
+
+// モーダル外クリックで閉じる
+document.getElementById('taskbookModal').addEventListener('click', function(e) {
+  if (e.target === this) closeTaskbookModal();
+});
+
+// ─── TODO ───
+function addTask() {
+  const input = document.getElementById('taskInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const cat = document.getElementById('taskCategory')?.value.trim() || '';
+  state.tasks.push({ id: Date.now(), text, priority: document.getElementById('taskPriority').value, category: cat, done: false, date: todayStr });
+  input.value = '';
+  document.getElementById('taskCategory').value = '';
+  save();
+  renderTasks();
+  updateCategoryDatalist();
+}
+
+function toggleTask(id) {
+  const t = state.tasks.find(t => t.id === id);
+  if (!t) return;
+
+  t.done = !t.done;
+  t.completedDate = t.done ? todayStr : null;
+
+  // 連動：habitId が直接あるケース（全頻度）
+  if (t.habitId) {
+    if (!state.completions[t.habitId]) state.completions[t.habitId] = [];
+    const idx = state.completions[t.habitId].indexOf(todayStr);
+    if (t.done && idx < 0) state.completions[t.habitId].push(todayStr);
+    if (!t.done && idx >= 0) state.completions[t.habitId].splice(idx, 1);
+  }
+
+  // 連動：タスク名と一致する習慣を全頻度で探して連動
+  const matched = state.habits.filter(h => h.name.trim() === t.text.trim() && h.id !== t.habitId);
+  matched.forEach(h => {
+    if (!state.completions[h.id]) state.completions[h.id] = [];
+    const idx = state.completions[h.id].indexOf(todayStr);
+    if (t.done && idx < 0) state.completions[h.id].push(todayStr);
+    if (!t.done && idx >= 0) state.completions[h.id].splice(idx, 1);
+  });
+
+  save();
+  renderTasks();
+  renderHabits();
+}
+
+function deleteTask(id) {
+  state.tasks = state.tasks.filter(t => t.id !== id);
+  save(); renderTasks();
+}
+
+function renderTasks() {
+  const list = document.getElementById('todoList');
+  const visible = state.tasks.filter(t => !t.done || t.completedDate === todayStr);
+  const pending = visible.filter(t => !t.done);
+  const done    = visible.filter(t => t.done);
+
+  if (!pending.length && !done.length) {
+    list.innerHTML = `<div class="empty-state"><span class="kanji">無</span>今日の課題はありません</div>`;
+    return;
+  }
+
+  const makeItem = (t) => `
+    <div class="task-item priority-${t.priority} ${t.done?'done':''}" data-id="${t.id}">
+      <div class="drag-handle" draggable="false"><span></span><span></span><span></span></div>
+      <div class="task-check" onclick="toggleTask(${t.id})"></div>
+      <div class="task-text" onclick="toggleTask(${t.id})">${escHtml(t.text)}</div>
+      <div class="priority-pill ${t.priority}" onclick="event.stopPropagation();togglePriorityDropdown(event,'task',${t.id})">${PRIORITY_LABELS[t.priority]}</div>
+      <button class="task-del" onclick="deleteTask(${t.id})">✕</button>
+    </div>`;
+
+  let html = '';
+
+  // ── 未了：タスク帳と同じ category-section 構造でカテゴリーグループ ──
+  if (pending.length) {
+    const groups = {};
+    const catOrder = [];
+    pending.forEach(t => {
+      const cat = t.category || `__solo__${t.id}`;
+      if (!groups[cat]) { groups[cat] = []; catOrder.push(cat); }
+      groups[cat].push(t);
+    });
+
+    catOrder.filter((c,i) => catOrder.indexOf(c) === i).forEach(cat => {
+      const items = groups[cat];
+      const isSolo = cat.startsWith('__solo__');
+      const displayName = isSolo ? items[0].text : cat;
+      const color = isSolo ? 'var(--ink-faint)' : getCategoryColor(cat);
+      html += `
+        <div class="category-section">
+          <div class="category-header">
+            <div class="category-dot" style="background:${color}"></div>
+            <div class="category-name">${escHtml(displayName)}</div>
+            <div class="category-count">${items.length}件</div>
+          </div>
+          <div class="sortable-list" data-type="tasks-pending" data-cat="${escHtml(isSolo ? '' : cat)}">
+            ${items.map(makeItem).join('')}
+          </div>
+        </div>`;
+    });
+  }
+
+  // ── 完了 ──
+  if (done.length) {
+    html += `<div class="category-section">
+      <div class="category-header">
+        <div class="category-dot" style="background:var(--moss)"></div>
+        <div class="category-name">完了</div>
+        <div class="category-count">${done.length}件</div>
+        <button class="btn-clear-done" onclick="clearDoneTasks()">一括削除</button>
+      </div>
+      <div class="sortable-list" data-type="tasks-done">${done.map(makeItem).join('')}</div>
+    </div>`;
+  }
+
+  list.innerHTML = html;
+  list.querySelectorAll('.sortable-list').forEach(el => initDrag(el, 'tasks'));
+}
+
+function clearDoneTasks() {
+  state.tasks = state.tasks.filter(t => !t.done);
+  save();
+  renderTasks();
+  renderHabits();
+}
+
+function addAllHabitsToToday(freq) {
+  const freqLabel = { daily: '毎日', weekly: '毎週', monthly: '毎月' }[freq] || '';
+  const targets = state.habits.filter(h => h.freq === freq);
+  let added = 0;
+  targets.forEach(h => {
+    const exists = state.tasks.some(t => t.habitId === h.id && t.date === todayStr);
+    if (exists) return;
+    state.tasks.push({
+      id: Date.now() + Math.random(),
+      text: h.name,
+      priority: 'mid',
+      category: freqLabel,
+      done: false,
+      date: todayStr,
+      habitId: h.id
+    });
+    added++;
+  });
+  if (added > 0) { save(); renderTasks(); renderHabits(); }
+}
+
+function addHabitToToday(habitId) {
+  const h = state.habits.find(h => h.id === habitId);
+  if (!h) return;
+  const exists = state.tasks.some(t => t.habitId === habitId && t.date === todayStr);
+  if (exists) return;
+  const freqLabel = { daily: '毎日', weekly: '毎週', monthly: '毎月' }[h.freq] || '';
+  state.tasks.push({
+    id: Date.now() + Math.random(),
+    text: h.name,
+    priority: 'mid',
+    category: freqLabel,
+    done: false,
+    date: todayStr,
+    habitId: habitId
+  });
+  save();
+  renderTasks();
+  renderHabits();
+}
+
+// ─── 習慣 ───
+function addHabit() {
+  const input = document.getElementById('habitInput');
+  const text = input.value.trim();
+  if (!text) return;
+  state.habits.push({ id: Date.now(), name: text, freq: document.getElementById('habitFreq').value });
+  input.value = '';
+  save();
+  renderHabits();
+}
+
+function toggleHabitDay(habitId, dateStr) {
+  if (!state.completions[habitId]) state.completions[habitId] = [];
+  const idx = state.completions[habitId].indexOf(dateStr);
+  if (idx >= 0) state.completions[habitId].splice(idx, 1);
+  else state.completions[habitId].push(dateStr);
+  save();
+  renderHabits();
+}
+
+function deleteHabit(id) {
+  state.habits = state.habits.filter(h => h.id !== id);
+  delete state.completions[id];
+  // 連動タスク（未完了のみ）も削除
+  state.tasks = state.tasks.filter(t => !(t.habitId === id && !t.done));
+  save();
+  renderHabits();
+  renderTasks();
+}
+
+function getStreak(habitId) {
+  const comp = state.completions[habitId] || [];
+  let streak = 0, d = new Date();
+  while (true) {
+    const ds = localDate(d);
+    if (comp.includes(ds)) { streak++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  return streak;
+}
+
+function renderHabits() {
+  const list = document.getElementById('habitList');
+  if (!state.habits.length) {
+    list.innerHTML = `<div class="empty-state"><span class="kanji">始</span>習慣を追加してください</div>`;
+    return;
+  }
+
+  // 今週の7日
+  const week = [];
+  for (let i=6; i>=0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    week.push({ date: localDate(d), label: ['日','月','火','水','木','金','土'][d.getDay()] });
+  }
+
+  // 重複名の検出（名前が同じ習慣のIDセット）
+  const nameCounts = {};
+  state.habits.forEach(h => {
+    const key = h.name.trim().toLowerCase();
+    nameCounts[key] = (nameCounts[key] || 0) + 1;
+  });
+  const isDuplicate = (h) => nameCounts[h.name.trim().toLowerCase()] > 1;
+
+  const makeHabitItem = (h) => {
+    const comp = state.completions[h.id] || [];
+    const streak = getStreak(h.id);
+    const dup = isDuplicate(h);
+
+    let gridHtml = '';
+    if (h.freq === 'monthly') {
+      gridHtml = renderMonthGrid(h.id, comp);
+    } else {
+      const dots = week.map(w => `
+        <div class="day-cell">
+          <div class="day-label">${w.label}</div>
+          <div class="day-dot ${comp.includes(w.date)?'done':''}" onclick="toggleHabitDay(${h.id},'${w.date}')"></div>
+        </div>`).join('');
+      gridHtml = `<div class="week-grid">${dots}</div>`;
+    }
+
+    const streakText = h.freq === 'monthly'
+      ? getMonthlyStreakText(h.id, comp)
+      : (streak > 0 ? `🔥 ${streak}日連続` : '―');
+
+    const syncedTask = state.tasks.find(t => t.habitId === h.id && t.date === todayStr);
+    const addedToday = !!syncedTask;
+
+    return `<div class="habit-item ${dup ? 'habit-duplicate' : ''}" data-id="${h.id}">
+      <div class="habit-header">
+        <div class="drag-handle" style="margin-right:4px;"><span></span><span></span><span></span></div>
+        <div class="habit-name">
+          ${escHtml(h.name)}
+          ${dup ? `<span class="dup-asterisk" title="同じ名前の習慣が複数登録されています">＊</span>` : ''}
+        </div>
+        <div class="habit-meta">
+          <span class="streak-badge ${streak>0||h.freq==='monthly'?'active':''}">${streakText}</span>
+          <button class="btn-habit-add-today ${addedToday ? 'added' : ''}"
+            onclick="addHabitToToday(${h.id})"
+            ${addedToday ? 'disabled' : ''}>
+            ${addedToday ? (syncedTask.done ? '✓ 完了' : '→ 課題中') : '＋ 今日の課題へ'}
+          </button>
+          <button style="background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:0.8rem;" onclick="deleteHabit(${h.id})">削除</button>
+        </div>
+      </div>
+      ${gridHtml}
+    </div>`;
+  };
+
+  const groups = [
+    { freq: 'daily',   label: '毎日', color: 'var(--vermillion)', kanji: '日' },
+    { freq: 'weekly',  label: '毎週', color: 'var(--indigo)',     kanji: '週' },
+    { freq: 'monthly', label: '毎月', color: 'var(--moss)',       kanji: '月' }
+  ];
+
+  let html = '';
+  groups.forEach(g => {
+    const items = state.habits.filter(h => h.freq === g.freq);
+    if (!items.length) return;
+
+    // 未追加の習慣が残っているか確認
+    const notAdded = items.filter(h => !state.tasks.some(t => t.habitId === h.id && t.date === todayStr));
+    const allAdded = notAdded.length === 0;
+
+    html += `
+      <div class="habit-freq-group">
+        <div class="habit-freq-header">
+          <div class="habit-freq-kanji" style="color:${g.color}">${g.kanji}</div>
+          <div class="habit-freq-label">${g.label}</div>
+          <div class="habit-freq-count">${items.length}件</div>
+          <button class="btn-habit-bulk-add ${allAdded ? 'added' : ''}"
+            onclick="addAllHabitsToToday('${g.freq}')"
+            ${allAdded ? 'disabled' : ''}>
+            ${allAdded ? '追加済' : '＋ 一括追加'}
+          </button>
+        </div>
+        <div class="sortable-list" data-type="habits" data-freq="${g.freq}">
+          ${items.map(makeHabitItem).join('')}
+        </div>
+      </div>`;
+  });
+
+  list.innerHTML = html;
+  list.querySelectorAll('.sortable-list').forEach(el => initDrag(el, 'habits'));
+}
+
+function renderMonthGrid(habitId, comp) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const todayDate = now.getDate();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+
+  const dayLabels = ['日','月','火','水','木','金','土'];
+  const headerHtml = dayLabels.map(l => `<div class="month-day-label">${l}</div>`).join('');
+
+  let cells = '';
+  // 空白セル（月初の曜日まで）
+  for (let i = 0; i < firstDay; i++) {
+    cells += `<div class="month-cell empty"></div>`;
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isDone = comp.includes(ds);
+    const isToday = d === todayDate;
+    cells += `<div class="month-cell ${isDone?'done':''} ${isToday?'today-cell':''}" onclick="toggleHabitDay(${habitId},'${ds}')" title="${ds}">${d}</div>`;
+  }
+
+  return `<div class="month-grid-header">${headerHtml}</div><div class="month-grid">${cells}</div>`;
+}
+
+function getMonthlyStreakText(habitId, comp) {
+  const now = new Date();
+  // 今月の完了数
+  const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const thisMonthCount = comp.filter(d => d.startsWith(ym)).length;
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  const pct = Math.round(thisMonthCount / daysInMonth * 100);
+  return thisMonthCount > 0 ? `📅 今月 ${thisMonthCount}/${daysInMonth}日 (${pct}%)` : '―';
+}
+
+
+// ─── 統計 ───
+function renderStats() {
+  const doneTasks = state.tasks.filter(t => t.done).length;
+  const maxStreak = state.habits.reduce((m, h) => Math.max(m, getStreak(h.id)), 0);
+  document.getElementById('statTasks').textContent = doneTasks;
+  document.getElementById('statStreak').textContent = maxStreak;
+  document.getElementById('statHabits').textContent = state.habits.length;
+
+  // 達成率リング
+  const rings = document.getElementById('ringContainer');
+  if (!state.habits.length) {
+    rings.innerHTML = `<div style="color:var(--ink-faint);font-size:0.85rem;letter-spacing:0.2em;">習慣を追加すると統計が表示されます</div>`;
+  } else {
+    rings.innerHTML = state.habits.map(h => {
+      const comp = state.completions[h.id] || [];
+      let pct;
+      if (h.freq === 'monthly') {
+        const now2 = new Date();
+        const ym = `${now2.getFullYear()}-${String(now2.getMonth()+1).padStart(2,'0')}`;
+        const dim = new Date(now2.getFullYear(), now2.getMonth()+1, 0).getDate();
+        pct = Math.round(comp.filter(d => d.startsWith(ym)).length / dim * 100);
+      } else {
+        const week = []; for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);week.push(localDate(d));}
+        const done = week.filter(d => comp.includes(d)).length;
+        pct = Math.round(done / 7 * 100);
+      }
+      const r = 28, circ = 2 * Math.PI * r;
+      const offset = circ * (1 - pct/100);
+      const color = pct >= 80 ? '#4a6741' : pct >= 50 ? '#b8860b' : '#c0392b';
+      return `<div class="ring-wrap">
+        <svg width="72" height="72" viewBox="0 0 72 72">
+          <circle cx="36" cy="36" r="${r}" fill="none" stroke="var(--washi-dark)" stroke-width="5"/>
+          <circle cx="36" cy="36" r="${r}" fill="none" stroke="${color}" stroke-width="5"
+            stroke-dasharray="${circ}" stroke-dashoffset="${offset}"
+            stroke-linecap="round" transform="rotate(-90 36 36)"/>
+          <text x="36" y="40" text-anchor="middle" font-family="'Noto Serif JP',serif" font-size="14" fill="var(--ink)">${pct}%</text>
+        </svg>
+        <div class="ring-name">${escHtml(h.name)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // ヒートマップ (28日)
+  const heatmap = document.getElementById('heatmap');
+  const cells = [];
+  for (let i=27; i>=0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const ds = localDate(d);
+    const count = state.habits.filter(h => (state.completions[h.id]||[]).includes(ds)).length;
+    const max = state.habits.length || 1;
+    const ratio = count / max;
+    const level = ratio === 0 ? '' : ratio < 0.25 ? 'l1' : ratio < 0.5 ? 'l2' : ratio < 0.75 ? 'l3' : 'l4';
+    cells.push(`<div class="heat-cell ${level}" title="${ds}: ${count}件"></div>`);
+  }
+  heatmap.innerHTML = cells.join('');
+}
+
+// ─── ドラッグ&ドロップ並べ替え ───
+function initDrag(container, type) {
+  if (!container) return;
+  let dragEl = null, placeholder = null;
+
+  // マウスイベント用
+  container.querySelectorAll('[data-id]').forEach(item => {
+    const handle = item.querySelector('.drag-handle');
+    if (!handle) return;
+
+    handle.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      startDrag(item, e.clientY, container, type);
+    });
+
+    // タッチ対応
+    handle.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      startDrag(item, e.touches[0].clientY, container, type);
+    }, { passive: false });
+  });
+}
+
+function startDrag(item, startY, container, type) {
+  const dragEl = item;
+  dragEl.classList.add('dragging');
+
+  // プレースホルダー
+  const ph = document.createElement('div');
+  ph.style.cssText = `height:${dragEl.offsetHeight}px;border:1.5px dashed var(--ink-faint);border-radius:2px;margin-bottom:4px;opacity:0.5;background:rgba(255,255,255,0.3);`;
+  dragEl.parentNode.insertBefore(ph, dragEl.nextSibling);
+
+  let lastY = startY;
+
+  function onMove(clientY) {
+    const dy = clientY - lastY;
+    lastY = clientY;
+
+    const rect = dragEl.getBoundingClientRect();
+    const midY = clientY;
+
+    // 前後の要素を取得してプレースホルダーを移動
+    const siblings = [...container.querySelectorAll('[data-id]')].filter(el => el !== dragEl);
+    let inserted = false;
+    for (const sib of siblings) {
+      const sibRect = sib.getBoundingClientRect();
+      if (midY < sibRect.top + sibRect.height / 2) {
+        container.insertBefore(ph, sib);
+        inserted = true;
+        break;
+      }
+    }
+    if (!inserted) container.appendChild(ph);
+  }
+
+  function onMouseMove(e) { onMove(e.clientY); }
+  function onTouchMove(e) { e.preventDefault(); onMove(e.touches[0].clientY); }
+
+  function endDrag() {
+    dragEl.classList.remove('dragging');
+    container.insertBefore(dragEl, ph);
+    ph.remove();
+
+    // 新しい順序をstateに反映
+    const newOrder = [...container.querySelectorAll('[data-id]')].map(el => parseInt(el.dataset.id));
+    if (type === 'tasks') {
+      const cat = container.dataset.cat ?? null;
+      if (cat !== null) {
+        // カテゴリー内の並べ替え
+        const reordered = newOrder.map(id => state.tasks.find(t => t.id === id)).filter(Boolean);
+        const others = state.tasks.filter(t => !newOrder.includes(t.id));
+        const firstIdx = state.tasks.findIndex(t => (t.category || '') === cat && !t.done);
+        const before = others.filter((t, i) => {
+          const origIdx = state.tasks.indexOf(t);
+          return origIdx < (firstIdx === -1 ? 0 : firstIdx);
+        });
+        const after = others.filter(t => !before.includes(t));
+        state.tasks = [...before, ...reordered, ...after];
+      } else {
+        const otherTasks = state.tasks.filter(t => !newOrder.includes(t.id));
+        const reordered = newOrder.map(id => state.tasks.find(t => t.id === id)).filter(Boolean);
+        state.tasks = [...reordered, ...otherTasks];
+      }
+    } else if (type === 'habits') {
+      // 頻度グループ内の並べ替え：同じfreqのもののみ置き換え
+      const freq = container.dataset.freq;
+      const reordered = newOrder.map(id => state.habits.find(h => h.id === id)).filter(Boolean);
+      const others = state.habits.filter(h => h.freq !== freq);
+      // 元のfreqグループの先頭位置を探してそこに挿入
+      const firstIdx = state.habits.findIndex(h => h.freq === freq);
+      if (firstIdx === -1) {
+        state.habits = [...others, ...reordered];
+      } else {
+        const before = state.habits.filter((h, i) => h.freq !== freq && i < firstIdx);
+        const after  = state.habits.filter((h, i) => h.freq !== freq && i >= firstIdx);
+        state.habits = [...before, ...reordered, ...after];
+      }
+    } else if (type === 'taskbook') {
+      // カテゴリ内の並べ替え
+      const cat = container.dataset.cat;
+      const otherItems = state.taskbook.filter(t => t.category !== cat);
+      const reordered = newOrder.map(id => state.taskbook.find(t => t.id === id)).filter(Boolean);
+      // カテゴリの元の位置を維持してマージ
+      const firstIdx = state.taskbook.findIndex(t => t.category === cat);
+      state.taskbook = [
+        ...state.taskbook.filter((t,i) => t.category !== cat && i < firstIdx),
+        ...reordered,
+        ...state.taskbook.filter((t,i) => t.category !== cat && i >= firstIdx)
+      ];
+    }
+    save();
+
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', endDrag);
+    document.removeEventListener('touchmove', onTouchMove);
+    document.removeEventListener('touchend', endDrag);
+  }
+
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', endDrag);
+  document.addEventListener('touchmove', onTouchMove, { passive: false });
+  document.addEventListener('touchend', endDrag);
+}
+
+// ─── データ エクスポート/インポート ───
+function openDataModal() {
+  document.getElementById('importStatus').textContent = '';
+  document.getElementById('importStatus').className = 'import-status';
+  document.getElementById('importFile').value = '';
+  document.getElementById('dataModal').classList.add('open');
+}
+
+function closeDataModal() {
+  document.getElementById('dataModal').classList.remove('open');
+}
+
+document.getElementById('dataModal').addEventListener('click', function(e) {
+  if (e.target === this) closeDataModal();
+});
+
+function doExport() {
+  const incTasks    = document.getElementById('exp-tasks').checked;
+  const incTaskbook = document.getElementById('exp-taskbook').checked;
+  const incHabits   = document.getElementById('exp-habits').checked;
+
+  const exportData = {
+    _version: 1,
+    _exportedAt: new Date().toISOString(),
+    _app: '禅リスト'
+  };
+
+  if (incTasks) {
+    exportData.tasks = state.tasks;
+    exportData.archivedTasks = state.archivedTasks || [];
+  }
+  if (incTaskbook) exportData.taskbook = state.taskbook;
+  if (incHabits) {
+    exportData.habits = state.habits;
+    exportData.completions = state.completions;
+  }
+
+  const json = JSON.stringify(exportData, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = localDate();
+  a.href = url;
+  a.download = `zenlist_${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function doImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const status = document.getElementById('importStatus');
+  const mode = document.querySelector('input[name="importMode"]:checked').value;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+
+      if (data._app !== '禅リスト' && !data.tasks && !data.habits && !data.taskbook) {
+        throw new Error('このファイルは禅リストのデータではありません');
+      }
+
+      if (mode === 'replace') {
+        // 上書きモード
+        if (data.tasks    !== undefined) state.tasks       = data.tasks;
+        if (data.taskbook !== undefined) state.taskbook    = data.taskbook;
+        if (data.habits   !== undefined) state.habits      = data.habits;
+        if (data.completions !== undefined) state.completions = data.completions;
+      } else {
+        // マージモード — IDの重複を避けて追加
+        if (data.tasks) {
+          const existIds = new Set(state.tasks.map(t => t.id));
+          data.tasks.forEach(t => { if (!existIds.has(t.id)) state.tasks.push(t); });
+        }
+        if (data.taskbook) {
+          const existIds = new Set(state.taskbook.map(t => t.id));
+          data.taskbook.forEach(t => { if (!existIds.has(t.id)) state.taskbook.push(t); });
+        }
+        if (data.habits) {
+          const existIds = new Set(state.habits.map(h => h.id));
+          data.habits.forEach(h => {
+            if (!existIds.has(h.id)) {
+              state.habits.push(h);
+              // 達成記録もマージ
+              if (data.completions && data.completions[h.id]) {
+                state.completions[h.id] = data.completions[h.id];
+              }
+            }
+          });
+        }
+      }
+
+      if (!state.taskbook) state.taskbook = [];
+      save();
+      renderTasks();
+      renderHabits();
+      renderTaskbook();
+
+      const counts = [];
+      if (data.tasks)    counts.push(`課題 ${data.tasks.length}件`);
+      if (data.taskbook) counts.push(`タスク帳 ${data.taskbook.length}件`);
+      if (data.habits)   counts.push(`習慣 ${data.habits.length}件`);
+      status.textContent = `✓ 読み込み完了 — ${counts.join('、')}`;
+      status.className = 'import-status ok';
+
+    } catch(err) {
+      status.textContent = `✕ エラー: ${err.message}`;
+      status.className = 'import-status err';
+    }
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+// ─── カテゴリー変更ドロップダウン ───
+let _activeCategoryDropdown = null;
+
+function toggleCategoryDropdown(e, id) {
+  closeAllCategoryDropdowns();
+  closeAllPriorityDropdowns();
+
+  const pill = e.currentTarget;
+  const current = state.taskbook.find(t => t.id === id)?.category;
+
+  // 既存カテゴリー一覧（使用中 + デフォルト）
+  const defaults = ['仕事','家事','健康','学習','農業','資産','趣味','家族','その他'];
+  const used = [...new Set(state.taskbook.map(t => t.category))];
+  const allCats = [...new Set([...defaults, ...used])];
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'category-dropdown';
+
+  // 既存カテゴリー一覧
+  dropdown.innerHTML = allCats.map(cat => `
+    <button class="${current === cat ? 'active' : ''}" onclick="setCategory(${id},'${cat}')">
+      <span class="cat-dot" style="background:${getCategoryColor(cat)}"></span>${escHtml(cat)}
+    </button>`).join('');
+
+  // 新カテゴリーの自由入力フィールド
+  const newCatWrap = document.createElement('div');
+  newCatWrap.style.cssText = 'padding:6px 10px;border-top:1px solid var(--washi-dark);display:flex;gap:6px;';
+  newCatWrap.innerHTML = `
+    <input id="newCatInput" type="text" placeholder="新しいカテゴリー…"
+      style="flex:1;background:none;border:none;border-bottom:1px solid var(--ink-faint);font-family:'Noto Sans JP',sans-serif;font-size:0.8rem;color:var(--ink);outline:none;padding:4px 2px;"
+      onkeydown="if(event.key==='Enter'){event.stopPropagation();setCategory(${id},this.value.trim());}">
+    <button onclick="event.stopPropagation();setCategory(${id},document.getElementById('newCatInput').value.trim())"
+      style="background:var(--ink);color:var(--washi);border:none;padding:4px 10px;font-size:0.75rem;cursor:pointer;border-radius:1px;">追加</button>`;
+  dropdown.appendChild(newCatWrap);
+
+  pill.style.position = 'relative';
+  pill.appendChild(dropdown);
+  _activeCategoryDropdown = dropdown;
+
+  setTimeout(() => {
+    document.addEventListener('click', closeAllCategoryDropdowns, { once: true });
+    document.getElementById('newCatInput')?.focus();
+  }, 0);
+}
+
+function closeAllCategoryDropdowns() {
+  if (_activeCategoryDropdown) {
+    _activeCategoryDropdown.remove();
+    _activeCategoryDropdown = null;
+  }
+}
+
+function setCategory(id, category) {
+  if (!category) return;
+  getCategoryColor(category); // 新カテゴリーなら色を生成
+  const t = state.taskbook.find(t => t.id === id);
+  if (t) { t.category = category; save(); renderTaskbook(); }
+  closeAllCategoryDropdowns();
+}
+
+// ─── 優先度変更ドロップダウン ───
+let _activePriorityDropdown = null;
+
+function togglePriorityDropdown(e, type, id) {
+  // 既存のドロップダウンを閉じる
+  closeAllPriorityDropdowns();
+
+  const pill = e.currentTarget;
+  const current = type === 'task'
+    ? state.tasks.find(t => t.id === id)?.priority
+    : state.taskbook.find(t => t.id === id)?.priority;
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'priority-dropdown';
+  dropdown.innerHTML = [
+    { val: 'high', label: '急ぎ' },
+    { val: 'mid',  label: 'ふつう' },
+    { val: 'low',  label: 'のちほど' }
+  ].map(o => `
+    <button class="opt-${o.val} ${current===o.val?'active':''}"
+      onclick="setPriority('${type}',${id},'${o.val}')">
+      ${o.label}
+    </button>`).join('');
+
+  pill.style.position = 'relative';
+  pill.appendChild(dropdown);
+  _activePriorityDropdown = dropdown;
+
+  // 外クリックで閉じる（次フレームで登録）
+  setTimeout(() => {
+    document.addEventListener('click', closeAllPriorityDropdowns, { once: true });
+  }, 0);
+}
+
+function closeAllPriorityDropdowns() {
+  if (_activePriorityDropdown) {
+    _activePriorityDropdown.remove();
+    _activePriorityDropdown = null;
+  }
+}
+
+function setPriority(type, id, priority) {
+  if (type === 'task') {
+    const t = state.tasks.find(t => t.id === id);
+    if (t) { t.priority = priority; save(); renderTasks(); }
+  } else {
+    const t = state.taskbook.find(t => t.id === id);
+    if (t) { t.priority = priority; save(); renderTaskbook(); }
+  }
+  closeAllPriorityDropdowns();
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── PWA インストールバナー ───
+let _deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  _deferredPrompt = e;
+  document.getElementById('installBanner').style.display = 'flex';
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').style.display = 'none';
+  _deferredPrompt = null;
+});
+
+function installApp() {
+  if (_deferredPrompt) {
+    _deferredPrompt.prompt();
+    _deferredPrompt.userChoice.then(() => {
+      _deferredPrompt = null;
+      document.getElementById('installBanner').style.display = 'none';
+    });
+  }
+}
+
+function dismissBanner() {
+  document.getElementById('installBanner').style.display = 'none';
+}
+
+// iOS判定 → Safariなら案内表示
+(function() {
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone;
+  if (isIos && !isStandalone) {
+    document.getElementById('iosBanner').style.display = 'flex';
+  }
+})();
+
+// ─── 初期描画 ───
+renderTasks();
+renderHabits();
+renderTaskbook();
+updateCategoryDatalist();
+</script>
+</body>
+</html>
